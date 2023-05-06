@@ -16,11 +16,16 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       emit(HomeState(isLoading: true));
 
       try {
+        //  checking for internet connection
+
         final result = await InternetAddress.lookup('example.com');
         final List<LawyerModel> lawyers = [];
         if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
           final prefs = await SharedPreferences.getInstance();
           final String token = prefs.getString('token') ?? '';
+
+          // Getting data from server
+
           await Dio(BaseOptions())
               .get(
             'http://80.211.233.121/blacklight/blacklight/public/api/lawyers/index',
@@ -29,6 +34,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             ),
           )
               .then((value) {
+// Checking for error and converting to model class format
+
             if (value.data != null && !value.data!.containsKey('error')) {
               final List datas = value.data['data'];
               for (var element in datas) {
@@ -41,6 +48,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         } else {
           throw 'something went wrong';
         }
+
+        // Adding to local database
 
         final database = await openDatabase('lawyer.db', version: 1,
             onCreate: (Database db, int version) async {
@@ -58,6 +67,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
         emit(HomeState(lawyers: lawyers));
       } catch (e) {
+        // Getting from local database in case of any error
+
         final database = await openDatabase('lawyer.db', version: 1,
             onCreate: (Database db, int version) async {
           await db.execute(

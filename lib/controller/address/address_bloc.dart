@@ -12,10 +12,16 @@ class AddressBloc extends Bloc<AddressEvent, AddressState> {
   AddressBloc() : super(AddressInitial()) {
     on<GetAddress>((event, emit) async {
       emit(AddressState(address: state.address, isLoading: true));
+
+      // Getting current positional latitude and longitude
+
       final position = await getPosition();
+
       if (position.runtimeType == String) {
         return emit(AddressState(address: state.address, isError: position));
       } else {
+        // Retrives all the details from the latitude and longitude
+
         final List<Placemark> placemark = await placemarkFromCoordinates(
             position.latitude, position.longitude);
         final index = placemark.length > 1 ? 1 : 0;
